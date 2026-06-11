@@ -1,0 +1,196 @@
+#explore data
+library(tidyverse)
+library(ggplot2)
+view(starwars)
+dim(starwars)
+str(starwars)
+glimpse(starwars)
+head(starwars)
+tail(starwars)
+attach(starwars)
+names(starwars)
+length(starwars)
+class(hair_color)
+unique(hair_color)
+view(table(hair_color))
+
+sort(table(hair_color), decreasing = TRUE)
+barplot(sort(table(eye_color), decreasing = TRUE))
+starwars %>% 
+  select(hair_color) %>% 
+  count(hair_color) %>% 
+  arrange(desc(n)) %>% 
+  view()
+hist(hair_color)
+
+view(starwars[is.na(hair_color), ])
+
+starwars %>% 
+  filter(height < 230) %>% 
+  with(boxplot(height))
+
+summary(height)
+hist(height)
+
+
+#clean data-variable types
+glimpse(starwars)
+class(starwars$gender)
+unique(starwars$gender)
+starwars$gender<-as.factor(starwars$gender)
+levels(starwars$gender)
+starwars$gender <- factor((starwars$gender),
+                          levels = c("masculine", "feminine"))
+levels(starwars$gender)
+
+#clean data-select variables
+starwars %>% 
+  select(name, height, ends_with("color")) %>% 
+  names()
+
+#clean data-filter observation
+unique(hair_color)
+
+starwars %>% 
+  filter(hair_color %in% c("blond", "brown") & height < 180) %>% 
+
+#cleaning- missing data
+starwars %>% 
+  drop_na(hair_color)
+
+#manipulate data
+starwars %>% 
+  select(name, height, species, eye_color) %>% 
+  filter(species== "Human" & height< 200 & 
+           eye_color %in% c ( "blue", "brown")) %>% 
+  head(10)
+
+starwars %>% 
+  select(name, height, mass, species) %>% 
+  mutate(height= height/100) %>% 
+  head(10)
+
+msleep %>% 
+  select(genus, order, sleep_total) %>% 
+  arrange(sleep_total) %>% 
+  head(10)
+
+starwars %>% 
+  select(sex, height, mass) %>% 
+  filter(sex == "male"|sex == "female") %>% 
+  mutate(height= height/100) %>% 
+  drop_na() %>% 
+  group_by(sex) %>% 
+  summarise('Average height'= mean(height), 
+            'Average mass'= mean(mass))
+
+data <- c (10, 15, 8, 12, 18)
+standard <- scale(data)
+mean(standard)
+var(standard)
+
+view(mtcars)
+data("mtcars")
+mtcars$mpg_std <- scale(mtcars$mpg)
+mtcars <- mtcars %>% 
+  mutate(normalmpg=(mpg-min(mpg))/(max(mpg)-min(mpg)))
+boxplot(mtcars,main="original mtcars", las=2)
+boxplot(mtcars$normalmpg,main="original mtcars", las=2)
+
+mtcars$s_disp <- mtcars$disp - mean (mtcars$disp,
+                                     na.rm= TRUE)
+mean(mtcars$disp)
+sd(mtcars$disp)
+
+#ttest
+library(tidyverse)
+library(patchwork)
+library(gapminder)
+
+gapminder %>% 
+  filter(continent== "Africa") %>% 
+  select(lifeExp) %>% 
+  t.test(mu = 50)
+
+gapminder %>% 
+  filter(continent %in% c ( "Africa", "Europe")) %>% 
+  t.test(lifeExp~continent, data=., alternative= "two.sided")
+
+gapminder %>% 
+  filter(continent %in% c ( "Africa", "Europe")) %>% 
+  t.test(lifeExp~continent, data=., alternative= "less",
+         conf.level=0.95)
+gapminder %>% 
+  filter(year %in% c(1957,2007)& continent=="Africa") %>% 
+  mutate(year= factor(year, levels = c(2007,1957))) %>% 
+  t.test(lifeExp ~ year, data = . , pair= TRUE)
+
+#chi square test
+head(iris)
+flowers <- iris %>% 
+  mutate(size= cut(Sepal.Length, breaks=3, 
+                   labels= c("small", "medium", "large"))) %>% 
+  select(Species, size)
+table(flowers)
+table(flowers$size)
+
+flowers %>% 
+  select(size) %>% 
+  table() %>% 
+  chisq.test() %>% 
+  .$expected
+
+#anova
+gapdata <- gapminder %>% 
+  filter(year == 2007 & continent %in% c ( "Americas", "Europe","Asia")) %>% 
+  select ( continent, lifeExp)
+
+gapdata %>% 
+  group_by(continent) %>% 
+  summarise(Mean_life = mean(lifeExp)) %>% 
+  arrange(Mean_life)
+
+gapdata %>% 
+  aov(lifeExp~continent, data=.) %>% 
+  summary()
+
+gapdata %>% 
+  aov(lifeExp~continent, data=.) %>% 
+  TukeyHSD() # %>% 
+
+#kmean cluster
+library(factoextra)
+data(iris)
+iris_hum <- iris[ ,1:4]
+my_pca <- prcomp(iris_hum, scale= TRUE)
+summary(my_pca)
+my_pca_data <- data.frame(my_pca $ x[ ,1:2])  
+head(my_pca_data)  
+
+fviz_nbclust(my_pca_data, FUNcluster= kmeans, method= "wss")  
+
+set.seed(123)
+my_kmeans <- kmeans (my_pca_data, centers = 3)
+fviz_pca_ind(my_pca, 
+             habillage = my_kmeans$cluster,
+             label= "none",
+             addEllipses = TRUE)
+
+#hierarchical clusters
+
+library(factoextra)
+iris.labels <- iris$Species
+table(iris.labels)
+iris_data= iris [1:4]
+iris_data_std= scale(iris_data)
+iris_dist= dist(iris_data_std)
+hc.out_iris <- hclust(iris_dist, method = "complete")
+plot(hc.out_iris)
+rect.hclust(hc.out_iris, k=3, border= 2:5)
+iris.clusters <- cutree(hc.out_iris, k=3)
+row.names(iris_data_std) <- paste(iris$Species,
+                                  1:dim(iris)[1],
+                                  sep= " ")
+fviz_cluster(list(data=iris_data_std, cluster= iris.clusters))
+table(iris.clusters, iris$Species)
+
