@@ -2,7 +2,7 @@
 Rstudio - statistic analysis
 
 
-First grapg
+Barplot
 
 ![Graph](graph.png)
 
